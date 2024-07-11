@@ -17,6 +17,10 @@ class thunderbird_labels extends rcube_plugin
 	private $name;
 	private $add_tb_flags;
 	private $message_tb_labels;
+	private $imap_labels = array( // préformaté pour le fonctionnement
+		'TEST' => 'red',
+		'JE_SUIS_FOU' => 'aquamarine'
+	);
 	const LABEL_STYLES = ['thunderbird', 'bullets', 'badges'];
 
 	function init()
@@ -102,7 +106,7 @@ class thunderbird_labels extends rcube_plugin
 			));
 		}
 		// pass label strings to JS
-		$this->rc->output->set_env('tb_label_custom_labels', $this->rc->config->get('tb_label_custom_labels'));
+		$this->rc->output->set_env('imap_labels', $this->imap_labels);
 	}
 
 	// create a section for the tb-labels Settings
@@ -281,6 +285,7 @@ class thunderbird_labels extends rcube_plugin
 
 		if (is_array($args['object']->headers->flags))
 		{
+			// removes the non-custom flags
 			$this->message_tb_labels = $this->custom_flags(array_keys($args['object']->headers->flags));
 		}
 		# -- no return value for this hook
@@ -295,7 +300,7 @@ class thunderbird_labels extends rcube_plugin
 		#rcube::write_log($this->name, print_r($p, true));
 		# -- always write array, even when empty
 		$p['content'] .= '<script type="text/javascript">
-		var tb_labels_for_message = '.json_encode($this->message_tb_labels).';
+		let tb_labels_for_message = '.json_encode($this->message_tb_labels).';
 		</script>';
 		return $p;
 	}
@@ -497,7 +502,6 @@ class thunderbird_labels extends rcube_plugin
 			'\\*',  // means labels allowed
 			'*',  // means labels allowed roundcubed
 		];
-		$default_flags = array_unique(array_merge($default_flags, $this->rc->config->get('tb_label_hidden_flags', [])));
 
 		/* TODO: flagnames contain $ sign, or umlauts (imap-utf-7 encoded meanging & will be in the name)
 		* smart way to recode those characters and create valid variable names?
