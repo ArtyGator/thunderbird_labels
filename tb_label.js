@@ -399,7 +399,7 @@ rcm_tb_label_flag_toggle = function (flag_uids, toggle_label_no, onoff) {
       }
       // add colors
       rowobj = $(row.obj);
-      spanobj = rowobj.find("td.subject span.tb_label_dots");
+      spanobj = rowobj.find("td.subject");
       spanobj.append(
         '<span class="tb_label_badges badge ' +
           toggle_label_no +
@@ -414,7 +414,7 @@ rcm_tb_label_flag_toggle = function (flag_uids, toggle_label_no, onoff) {
       rowobj = $(row.obj);
       rowobj
         .find(
-          "td.subject span.tb_label_dots span.tb_label_badges." +
+          "td.subject span.tb_label_badges." +
             toggle_label_no
         )
         .remove();
@@ -457,6 +457,7 @@ rcm_tb_label_toggle = function (toggle_label) {
   if (!selection.length) {
     return;
   }
+  toggle_labels = [toggle_label];
   toggle_labels.forEach(function (v, k, arr) {
     var first_message,
       first_toggle_mode,
@@ -524,9 +525,6 @@ rcm_tb_label_toggle = function (toggle_label) {
         }
       }
     });
-    if (unset_all) {
-      flag_uids = [];
-    }
     // skip sending flags to backend that are not set anywhere
     if (flag_uids.length === 0 && unflag_uids.length === 0) {
       return;

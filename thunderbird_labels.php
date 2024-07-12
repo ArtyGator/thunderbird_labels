@@ -416,12 +416,13 @@ class thunderbird_labels extends rcube_plugin
 		<ul class="toolbarmenu listing" role="menu" aria-labelledby="aria-label-tb-labelmenu">';
 		$tpl_end = '</ul></div>';
 		$tpl_menu = '';
-		$custom_labels = $this->rc->config->get('tb_label_custom_labels');
-		$i = 0;
-		foreach ($custom_labels as $label_name => $human_readable)
+		// $custom_labels = $this->rc->config->get('tb_label_custom_labels');
+		foreach ($this->imap_labels as $label_name => $color)
 		{
-			$tpl_menu .= '<roundcube:button type="link-menuitem" command="plugin.thunderbird_labels.rcm_tb_label_menuclick" content="'.rcube::Q("$i $human_readable").'" prop="LABEL'.$i.'" classAct="tb-label label'.$i.' inline active" class="tb-label label'.$i.'" data-labelname="LABEL'.$i.'" />';
-			$i++;
+			$human_readable = ucwords(str_replace('_', ' ', $label_name));
+			$tpl_menu .= '<roundcube:button type="link-menuitem" command="plugin.thunderbird_labels.rcm_tb_label_menuclick"';
+			$tpl_menu .= 'content="'.rcube::Q("$human_readable").'" prop="'.$label_name.'" classAct="tb-label '.$label_name;
+			$tpl_menu .= 'inline active" class="tb-label '.$label_name.'" data-labelname="'.$label_name.'" />';
 		}
 		$html = $this->template2html($tpl.$tpl_menu.$tpl_end);
 		if ($html)
