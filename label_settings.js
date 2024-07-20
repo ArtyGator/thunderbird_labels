@@ -47,7 +47,7 @@ function update_cover_color() {
 }
 
 function create_label(raw_name) {
-    let label_name = raw_name.replace(/[^a-zA-Z0-9\s]/g, '').replace(' ', '_').toUpperCase(); 
+    let label_name = raw_name.replace(/[^A-zÀ-ÿ0-9\s]/g, '').replace(' ', '_').toUpperCase(); 
     let new_color = '';
     let root_form_controls = $('.formcontent tbody')[0].childNodes;
     $(root_form_controls[root_form_controls.length - 2]).after(LABEL_TEMPLATE

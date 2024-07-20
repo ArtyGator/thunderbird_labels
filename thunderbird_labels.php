@@ -153,7 +153,7 @@ class thunderbird_labels extends rcube_plugin
 
 				$button = new html_button(['class' => "delete_button"]);
 				$args['blocks']['tb_label']['options'][$label] = array(
-					'title' => ucwords(strtolower(str_replace('_', ' ', $label))),
+					'title' => mb_convert_case(strtolower(str_replace('_', ' ', $label)), MB_CASE_TITLE, 'UTF-8'),
 					'content' => html::div('input-group', 
 						$select->show($readable_colors[$color]) .
 						$button->show("Supprimer")
@@ -378,10 +378,10 @@ class thunderbird_labels extends rcube_plugin
 		$imap_labels = $this->rc->config->get('tb_label_custom_labels');
 		foreach ($imap_labels as $label_name => $color)
 		{
-			$human_readable = ucwords(strtolower(str_replace('_', ' ', $label_name)));
+			$human_readable = mb_convert_case(strtolower(str_replace('_', ' ', $label_name)), MB_CASE_TITLE, 'UTF-8');
 			$tpl_menu .= '<roundcube:button type="link-menuitem" command="plugin.thunderbird_labels.rcm_tb_label_menuclick"';
-			$tpl_menu .= 'content="'.rcube::Q("$human_readable").'" prop="'.$label_name.'" classAct="tb-label '.$label_name;
-			$tpl_menu .= 'inline active" class="tb-label '.$label_name.'" data-labelname="'.$label_name.'" />';
+			$tpl_menu .= ' content="'.rcube::Q("$human_readable").'" prop="'.$label_name.'" classAct="tb-label '.$label_name;
+			$tpl_menu .= ' inline active" class="tb-label '.$label_name.'" data-labelname="'.$label_name.'" />';
 		}
 		$html = $this->template2html($tpl.$tpl_menu.$tpl_end);
 		if ($html)

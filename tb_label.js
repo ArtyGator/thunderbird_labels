@@ -195,9 +195,9 @@ rcm_tb_label_css = (function () {
       //   colors.bg
       // );
       css += `div#labelbox span.box_tb_label_${label_name}, .tb_label_badges.${label_name}
-        {  background-color: ${color}; }
-      div.contextmenu li .${label_name}
-        { color: ${color}; }\n`;
+        {  background-color: var(--${color}); }
+      div.contextmenu .${label_name}, div.popupmenu .${label_name}
+        { color: var(--${color}) !important; }\n`;
     }
     return css;
   };
