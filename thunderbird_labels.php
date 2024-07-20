@@ -17,11 +17,6 @@ class thunderbird_labels extends rcube_plugin
 	private $name;
 	private $add_tb_flags;
 	private $message_tb_labels;
-	private $imap_labels = array( // préformaté pour le fonctionnement
-		'TEST' => 'red',
-		'JE_SUIS_FOU' => 'aquamarine'
-	);
-	const LABEL_STYLES = ['thunderbird', 'bullets', 'badges'];
 
 	function init()
 	{
@@ -83,6 +78,7 @@ class thunderbird_labels extends rcube_plugin
 		}
 		elseif ($this->rc->task == 'settings')
 		{
+			$this->include_script('label_settings.js');
 			$this->include_stylesheet($this->local_skin_path() . '/tb_label.css');
 			$this->add_hook('preferences_list', array($this, 'prefs_list'));
 			$this->add_hook('preferences_sections_list', array($this, 'prefs_section'));
@@ -93,20 +89,8 @@ class thunderbird_labels extends rcube_plugin
 	private function setCustomLabels()
 	{
 		$c = $this->rc->config->get('tb_label_custom_labels');
-		if (empty($c) || isset($c[3]))
-		{
-			// if no user specific labels, use localized strings by default
-			$this->rc->config->set('tb_label_custom_labels', array(
-				'LABEL0' => $this->getText('label0'),
-				'LABEL1' => $this->getText('label1'),
-				'LABEL2' => $this->getText('label2'),
-				'LABEL3' => $this->getText('label3'),
-				'LABEL4' => $this->getText('label4'),
-				'LABEL5' => $this->getText('label5')
-			));
-		}
 		// pass label strings to JS
-		$this->rc->output->set_env('imap_labels', $this->imap_labels);
+		$this->rc->output->set_env('imap_labels', $c);
 	}
 
 	// create a section for the tb-labels Settings
@@ -147,56 +131,46 @@ class thunderbird_labels extends rcube_plugin
 			);
 		}
 
-		$key = 'tb_label_enable_shortcuts';
-		if (!in_array($key, $dont_override))
+		if (!in_array('tb_label_custom_labels', $dont_override))
 		{
-			$input = new html_checkbox(array(
-				'name' => $key,
-				'id' => $key,
-				'value' => 1
-			));
-			$content = $input->show($this->rc->config->get($key));
-			$args['blocks']['tb_label']['options'][$key] = array(
-				'title' => $this->gettext('tb_label_enable_shortcuts_option'),
-				'content' => $content
+			$readable_colors = array(
+				"blue" => "Bleu",
+				"indigo"=>"Indigo",
+				"purple"=>"Violet",
+				"pink"=>"Rose",
+				"red"=>"Rouge",
+				"orange"=>"Orange",
+				"yellow"=>"Jaune",
+				"teal"=>"Sarcelle",
+				"cyan"=>"Cyan",
+				"gray"=>"Gris"
 			);
-		}
-
-		$key = 'tb_label_style';
-		if (!in_array($key, $dont_override))
-		{
-			$select = new html_select(array(
-				'name' => $key,
-				'id' => $key
-			));
-			$select->add([$this->gettext('thunderbird'), $this->gettext('bullets'), $this->gettext('badges')], self::LABEL_STYLES);
-			$content = $select->show($this->rc->config->get($key));
-
-			$args['blocks']['tb_label']['options'][$key] = array(
-				'title' => $this->gettext('tb_label_style_option'),
-				'content' => $content
-			);
-		}
-
-		if (!in_array('tb_label_custom_labels', $dont_override)
-			&& $this->rc->config->get('tb_label_modify_labels'))
-		{
-			$custom_labels = $this->rc->config->get('tb_label_custom_labels');
-			foreach ($custom_labels as $key => $value)
+			$imap_labels = $this->rc->config->get('tb_label_custom_labels');
+			foreach ($imap_labels as $label => $color)
 			{
-				$input = new html_inputfield(array(
-					'name' => "custom_$key",
-					'id' => "custom_$key",
-					'type' => 'text',
-					'autocomplete' => 'off',
-					'title' => $this->getText(strtolower($key)), # shows default value on hover
-					'value' => $value));
+				$select = new html_select(['name' => "label_$label", 'class' => 'label_color_selector']);
+				$select->add(array_values($readable_colors), array_keys($readable_colors));
 
-				$args['blocks']['tb_label']['options']["option_$key"] = array(
-					'title' => $key,
-					'content' => $input->show()
-					);
+				$button = new html_button(['class' => "delete_button"]);
+				$args['blocks']['tb_label']['options'][$label] = array(
+					'title' => ucwords(strtolower(str_replace('_', ' ', $label))),
+					'content' => html::div('input-group', 
+						$select->show($readable_colors[$color]) .
+						$button->show("Supprimer")
+					)
+				);
 			}
+
+			$input = new html_inputfield(array(
+				'id' => 'add_label_field',
+				'placeholder' => "Ajouter une étiquette"
+			));
+			$add_btn = new html_button(['id' => 'add_label_button']);
+
+			$args['blocks']['tb_label']['options']['adder'] = array(
+				'title' => $input->show(),
+				'content' => $add_btn->show('Ajouter')
+			);
 		}
 
 		return $args;
@@ -214,29 +188,14 @@ class thunderbird_labels extends rcube_plugin
 		if (!in_array('tb_label_enable', $dont_override))
 			$args['prefs']['tb_label_enable'] = rcube_utils::get_input_value('tb_label_enable', rcube_utils::INPUT_POST) ? true : false;
 
-		if (!in_array('tb_label_enable_shortcuts', $dont_override))
-		  $args['prefs']['tb_label_enable_shortcuts'] = rcube_utils::get_input_value('tb_label_enable_shortcuts', rcube_utils::INPUT_POST) ? true : false;
+		$args['prefs']['tb_label_custom_labels'] = array();
 
-		if (!in_array('tb_label_style', $dont_override))
-		{
-			$tb_label_style = rcube_utils::get_input_value('tb_label_style', rcube_utils::INPUT_POST);
-			if (in_array($tb_label_style, self::LABEL_STYLES))
-			{
-				$args['prefs']['tb_label_style'] = $tb_label_style;
-			}
-		}
+		foreach ($_POST as $field => $color) {
+			if (!str_starts_with($field, 'label_'))
+				continue;
 
-		if (!in_array('tb_label_custom_labels', $dont_override)
-			&& $this->rc->config->get('tb_label_modify_labels'))
-		{
-			$args['prefs']['tb_label_custom_labels'] = array(
-			'LABEL0' => $this->gettext('label0'),
-			'LABEL1' => rcube_utils::get_input_value('custom_LABEL1', rcube_utils::INPUT_POST),
-			'LABEL2' => rcube_utils::get_input_value('custom_LABEL2', rcube_utils::INPUT_POST),
-			'LABEL3' => rcube_utils::get_input_value('custom_LABEL3', rcube_utils::INPUT_POST),
-			'LABEL4' => rcube_utils::get_input_value('custom_LABEL4', rcube_utils::INPUT_POST),
-			'LABEL5' => rcube_utils::get_input_value('custom_LABEL5', rcube_utils::INPUT_POST)
-			);
+			// strip the prefix
+			$args['prefs']['tb_label_custom_labels'][substr($field, 6)] = rcube_utils::parse_input_value($color);
 		}
 
 		return $args;
@@ -416,10 +375,10 @@ class thunderbird_labels extends rcube_plugin
 		<ul class="toolbarmenu listing" role="menu" aria-labelledby="aria-label-tb-labelmenu">';
 		$tpl_end = '</ul></div>';
 		$tpl_menu = '';
-		// $custom_labels = $this->rc->config->get('tb_label_custom_labels');
-		foreach ($this->imap_labels as $label_name => $color)
+		$imap_labels = $this->rc->config->get('tb_label_custom_labels');
+		foreach ($imap_labels as $label_name => $color)
 		{
-			$human_readable = ucwords(str_replace('_', ' ', $label_name));
+			$human_readable = ucwords(strtolower(str_replace('_', ' ', $label_name)));
 			$tpl_menu .= '<roundcube:button type="link-menuitem" command="plugin.thunderbird_labels.rcm_tb_label_menuclick"';
 			$tpl_menu .= 'content="'.rcube::Q("$human_readable").'" prop="'.$label_name.'" classAct="tb-label '.$label_name;
 			$tpl_menu .= 'inline active" class="tb-label '.$label_name.'" data-labelname="'.$label_name.'" />';
